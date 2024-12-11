@@ -1,6 +1,7 @@
 // app/api/transcript/route.ts
 import { NextResponse } from "next/server";
-import { YoutubeTranscript } from "youtube-transcript";
+
+import { Innertube } from "youtubei.js/web";
 
 export async function GET(request: Request) {
   // Handle CORS preflight requests
@@ -31,11 +32,22 @@ export async function GET(request: Request) {
       );
     }
 
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
-    const formattedTranscript = transcript.map((t) => t.text);
+    const youtube = await Innertube.create({
+      lang: "en",
+      location: "US",
+      retrieve_player: false,
+    });
+
+    const info = await youtube.getInfo(videoId);
+
+    const transcriptData = await info.getTranscript();
+    const transcript =
+      transcriptData?.transcript?.content?.body?.initial_segments.map(
+        (segment) => segment.snippet.text
+      );
 
     return NextResponse.json(
-      { transcript: formattedTranscript },
+      { transcript: transcript },
       {
         headers: {
           "Access-Control-Allow-Origin": "*",
